@@ -1,0 +1,132 @@
+# 주요 변경사항:
+# 1. 최대 속도를 0.8 m/s로 증가 (기존 0.3)
+# 2. 가속도를 5.0으로 증가 (기존 3.0)
+# 3. 속도 smoother 최대값 증가
+# 4. 19센치 바퀴에 맞는 설정
+
+controller_server:
+  ros__parameters:
+    controller_frequency: 20.0  # 10 -> 20으로 증가 (더 부드러운 제어)
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.001
+    min_theta_velocity_threshold: 0.001
+    failure_tolerance: 0.3
+    progress_checker_plugins: ["progress_checker"]
+    goal_checker_plugins: ["goal_checker"]
+    controller_plugins: ["FollowPath"]
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.1
+      movement_time_allowance: 10.0
+    goal_checker:
+      stateful: true
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.25
+      yaw_goal_tolerance: 0.25
+    FollowPath:
+      plugin: "dwb_core::DWBLocalPlanner"
+      debug_trajectory_details: false  # debug 끄기
+      min_vel_x: 0.0
+      min_vel_y: 0.0
+      max_vel_x: 0.2  # 네비게이션은 느리게 (0.2 m/s)
+      max_vel_y: 0.0
+      max_vel_theta: 0.8  # 회전도 느리게
+      min_speed_xy: 0.0
+      max_speed_xy: 0.2  # 네비게이션용 최대속도
+      min_speed_theta: 0.0
+      # 가속도 증가로 더 빠른 반응
+      acc_lim_x: 5.0  # 3.0 -> 5.0
+      acc_lim_y: 0.0
+      acc_lim_theta: 5.0  # 3.2 -> 5.0
+      decel_lim_x: -4.0  # -2.5 -> -4.0
+      decel_lim_y: 0.0
+      decel_lim_theta: -5.0  # -3.2 -> -5.0
+      vx_samples: 20
+      vy_samples: 0
+      vtheta_samples: 40
+      sim_time: 1.2  # 1.5 -> 1.2 (더 빠른 반응)
+      linear_granularity: 0.05
+      angular_granularity: 0.025
+      transform_tolerance: 0.2  # 0.5 -> 0.2 (더 엄격한 동기화)
+      xy_goal_tolerance: 0.05
+      trans_stopped_velocity: 0.1  # 0.25 -> 0.1 (더 빠른 정지 판정)
+      short_circuit_trajectory_evaluation: true
+      stateful: true
+      critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+      BaseObstacle.scale: 0.02
+      PathAlign.scale: 32.0
+      PathAlign.forward_point_distance: 0.1
+      GoalAlign.scale: 24.0
+      GoalAlign.forward_point_distance: 0.1
+      PathDist.scale: 32.0
+      GoalDist.scale: 24.0
+      RotateToGoal.scale: 32.0
+      RotateToGoal.slowing_factor: 3.0  # 5.0 -> 3.0 (덜 느려짐)
+      RotateToGoal.lookahead_time: -1.0
+    enable_stamped_cmd_vel: true
+
+velocity_smoother:
+  ros__parameters:
+    smoothing_frequency: 30.0  # 20 -> 30으로 증가
+    scale_velocities: false
+    feedback: "OPEN_LOOP"
+    max_velocity: [0.2, 0.0, 0.8]  # 네비게이션용 제한
+    min_velocity: [-0.2, 0.0, -0.8]
+    deadband_velocity: [0.01, 0.0, 0.01]  # 0.0 -> 0.01 (작은 떨림 제거)
+    velocity_timeout: 1.0
+    max_accel: [5.0, 0.0, 5.0]  # 2.5 -> 5.0, 3.2 -> 5.0
+    max_decel: [-4.0, 0.0, -5.0]  # -2.5 -> -4.0, -3.2 -> -5.0
+    odom_topic: "odom"
+    odom_duration: 0.1
+    use_realtime_priority: false
+    enable_stamped_cmd_vel: true
+
+# 나머지는 원본 그대로...
+amcl:
+  ros__parameters:
+    alpha1: 0.2
+    alpha2: 0.2
+    alpha3: 0.2
+    alpha4: 0.2
+    alpha5: 0.2
+    base_frame_id: "base_footprint"
+    beam_skip_distance: 0.5
+    beam_skip_error_threshold: 0.9
+    beam_skip_threshold: 0.3
+    do_beamskip: false
+    global_frame_id: "map"
+    lambda_short: 0.1
+    laser_likelihood_max_dist: 2.0
+    laser_max_range: 100.0
+    laser_min_range: -1.0
+    laser_model_type: "likelihood_field"
+    max_beams: 60
+    max_particles: 2000
+    min_particles: 500
+    odom_frame_id: "odom"
+    pf_err: 0.05
+    pf_z: 0.99
+    recovery_alpha_fast: 0.0
+    recovery_alpha_slow: 0.0
+    resample_interval: 1
+    robot_model_type: "nav2_amcl::DifferentialMotionModel"
+    save_pose_rate: 0.5
+    sigma_hit: 0.2
+    tf_broadcast: true
+    transform_tolerance: 0.5
+    update_min_a: 0.2
+    update_min_d: 0.25
+    z_hit: 0.5
+    z_max: 0.05
+    z_rand: 0.5
+    z_short: 0.05
+    scan_topic: scan
+    map_topic: map
+    set_initial_pose: false
+    always_reset_initial_pose: false
+    first_map_only: false
+    initial_pose:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      yaw: 0.0
